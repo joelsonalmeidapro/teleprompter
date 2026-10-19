@@ -252,10 +252,13 @@ document.addEventListener('keydown', e => {
   $('tecla').textContent = 'Último botão recebido: ' + (k === ' ' ? 'Espaço' : k) + (e.code && e.code !== k ? ` (${e.code})` : '');
   avisoBotao = (k === ' ' ? 'Espaço' : k); clearTimeout(avisoT); avisoT = setTimeout(() => { avisoBotao = ''; posicionar(); }, 2500); posicionar();
   const mapa = LS.get('mapa', {});
-  const acao = mapa[k] || ({' ': 'play', 'Enter': 'play', 'MediaPlayPause': 'play', 'k': 'play',
+  let acao = mapa[k] || ({' ': 'play', 'Enter': 'play', 'MediaPlayPause': 'play', 'k': 'play',
     'ArrowRight': 'mais', '+': 'mais', 'ArrowLeft': 'menos', '-': 'menos',
     'ArrowUp': 'volta', 'PageUp': 'volta', 'MediaTrackPrevious': 'volta', 'AudioVolumeUp': 'volta',
     'ArrowDown': 'avanca', 'PageDown': 'avanca', 'MediaTrackNext': 'avanca', 'AudioVolumeDown': 'avanca', 'Home': 'inicio'})[k];
+  // qualquer outro botão do controle (ex.: OK no modo game) = pausar/continuar
+  const ignorar = ['Shift', 'Control', 'Alt', 'Meta', 'Tab', 'Escape', 'CapsLock', 'Unidentified', 'Dead', 'Process'];
+  if (!acao && !ignorar.includes(k) && !e.ctrlKey && !e.metaKey && !e.altKey) acao = 'play';
   if (!acao) return;
   e.preventDefault();
   if (acao === 'play') alternar(); else if (acao === 'mais') setVel(AJ.vel + 10); else if (acao === 'menos') setVel(AJ.vel - 10);
