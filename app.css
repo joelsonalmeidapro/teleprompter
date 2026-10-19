@@ -55,7 +55,7 @@ button,input,select{font:inherit}
 #barra{position:absolute;left:0;right:0;bottom:0;height:3px;background:#111}
 #barra i{display:block;height:100%;width:0;background:var(--roxo)}
 #painel{position:absolute;left:0;right:0;bottom:0;max-height:78vh;overflow:auto;background:linear-gradient(transparent,rgba(0,0,0,.94) 18px);padding:26px max(14px,env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));display:grid;gap:12px;transition:opacity .2s}
-.rodando #painel{opacity:0;pointer-events:none}
+.limpo #painel{opacity:0;pointer-events:none}
 .linha{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .linha strong{font-size:14px;color:var(--dim);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .linha .prim{flex:1}
@@ -70,4 +70,4 @@ button,input,select{font:inherit}
 @media (orientation:landscape) and (max-height:500px){#painel{max-height:92vh}}
 
 #pausaFlut{display:none;position:absolute;right:max(14px,env(safe-area-inset-right));bottom:calc(16px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(20,22,29,.55);color:#fff;font-size:18px;z-index:4}
-.rodando #pausaFlut{display:block}
+.limpo #pausaFlut{display:block}

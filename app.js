@@ -164,7 +164,7 @@ function ajustarFonte() {
 }
 
 /* ---------- rolagem ---------- */
-let y = 0, rodando = false, tAnt = 0, velAtual = 0, falando = false, ultimaFala = 0, wake = null;
+let avisoBotao = '', avisoT = 0, y = 0, rodando = false, tAnt = 0, velAtual = 0, falando = false, ultimaFala = 0, wake = null;
 const pxPorSeg = () => roteiroAtual && roteiroAtual.palavras ? (maxY() / roteiroAtual.palavras) * AJ.vel / 60 : 0;
 const maxY = () => Math.max(0, $('rolo').scrollHeight - innerHeight * (AJ.guiaPos / 100) - 40);
 function posicionar() {
@@ -172,7 +172,7 @@ function posicionar() {
   const m = maxY(), pct = m ? y / m : 0;
   $('barraFill').style.width = (pct * 100).toFixed(1) + '%';
   const pxs = pxPorSeg(), rest = pxs ? (m - y) / pxs : 0;
-  $('hudTxt').textContent = `${rodando ? (AJ.voz && micOk ? (falando ? 'ouvindo · ' : 'esperando você falar · ') + 'mic ' + Math.round(nivelAtual * 100) + '/' + Math.round(limiarAtual * 100) + ' · ' : '') : 'pausado · '}${AJ.vel} ppm · falta ${Math.floor(rest / 60)}:${String(Math.floor(rest % 60)).padStart(2, '0')}`;
+  $('hudTxt').textContent = `${avisoBotao ? 'botão: ' + avisoBotao + ' · ' : ''}${rodando ? (AJ.voz && micOk ? (falando ? 'ouvindo · ' : 'esperando você falar · ') + 'mic ' + Math.round(nivelAtual * 100) + '/' + Math.round(limiarAtual * 100) + ' · ' : '') : 'pausado · '}${AJ.vel} ppm · falta ${Math.floor(rest / 60)}:${String(Math.floor(rest % 60)).padStart(2, '0')}`;
 }
 function quadro(t) {
   const dt = tAnt ? Math.min(0.1, (t - tAnt) / 1000) : 0; tAnt = t;
@@ -182,7 +182,7 @@ function quadro(t) {
   velAtual += (alvo - velAtual) * Math.min(1, dt * 6);
   if (Math.abs(velAtual) > 0.05) {
     y = Math.min(maxY(), y + velAtual * dt); posicionar();
-    if (y >= maxY() && rodando) { parar(); marcarFeito(); }
+    if (y >= maxY() && rodando) { parar(true); marcarFeito(); }
   }
   requestAnimationFrame(quadro);
 }
@@ -191,14 +191,16 @@ let contando = false;
 function tocar() {
   if (contando) return;
   if (ctx && ctx.state !== 'running') ctx.resume();
-  const vai = () => { rodando = true; document.body.classList.add('rodando'); $('play').textContent = '❚❚ Pausar'; pedirWake(); posicionar(); };
+  const vai = () => { rodando = true; document.body.classList.add('rodando', 'limpo'); $('pausaFlut').textContent = '❚❚'; $('play').textContent = '❚❚ Pausar'; pedirWake(); posicionar(); };
   if (!AJ.contar || y > 5) return vai();
   contando = true; let n = 3; const c = $('contagem'); c.hidden = false; c.textContent = n;
-  document.body.classList.add('rodando');
+  document.body.classList.add('rodando', 'limpo');
   const iv = setInterval(() => { n--; if (n <= 0) { clearInterval(iv); c.hidden = true; contando = false; vai(); } else c.textContent = n; }, 800);
 }
-function parar() { rodando = false; document.body.classList.remove('rodando'); $('play').textContent = y > 5 ? '▶ Continuar' : '▶ Começar'; if (roteiroAtual) LS.set('pos_' + roteiroAtual.id, y); posicionar(); }
+// parar(true) abre o menu; parar() só congela o texto (controle e botão flutuante)
+function parar(menu) { rodando = false; document.body.classList.remove('rodando'); if (menu) document.body.classList.remove('limpo'); $('pausaFlut').textContent = '▶'; $('play').textContent = y > 5 ? '▶ Continuar' : '▶ Começar'; if (roteiroAtual) LS.set('pos_' + roteiroAtual.id, y); posicionar(); }
 const alternar = () => rodando ? parar() : tocar();
+const abrirMenu = () => { parar(true); };
 function setVel(v) { AJ.vel = Math.max(60, Math.min(260, v)); $('vel').value = AJ.vel; $('velv').textContent = AJ.vel + ' ppm'; salvarAj(); posicionar(); }
 function pularFrase(dir) {
   const guia = innerHeight * AJ.guiaPos / 100;
@@ -212,20 +214,22 @@ function marcarFeito() { const f = LS.get('feitos', {}); f[roteiroAtual.id] = Da
 function abrirPrompter(id) {
   roteiroAtual = DADOS.roteiros.find(r => r.id === id); if (!roteiroAtual) return;
   mostrar('telaPrompter'); $('tituloAtual').textContent = roteiroAtual.titulo;
-  y = 0; aplicarVisual(); remontar(); y = Math.min(LS.get('pos_' + id, 0), maxY()); posicionar(); parar();
+  y = 0; aplicarVisual(); remontar(); y = Math.min(LS.get('pos_' + id, 0), maxY()); posicionar(); parar(true);
   if (AJ.voz) ligarMic();
 }
-$('voltarLista').onclick = () => { parar(); desligarMic(); abrirLista(); };
+$('voltarLista').onclick = () => { parar(true); desligarMic(); abrirLista(); };
 $('play').onclick = alternar;
-$('inicio').onclick = () => { parar(); y = 0; LS.set('pos_' + roteiroAtual.id, 0); posicionar(); $('play').textContent = '▶ Começar'; };
-$('palco').addEventListener('click', alternar);
-$('pausaFlut').onclick = e => { e.stopPropagation(); parar(); };
+$('inicio').onclick = () => { parar(true); y = 0; LS.set('pos_' + roteiroAtual.id, 0); posicionar(); $('play').textContent = '▶ Começar'; };
+// tocar na tela: com o texto limpo abre o menu; com o menu aberto, começa
+$('palco').addEventListener('click', () => document.body.classList.contains('limpo') ? abrirMenu() : tocar());
+$('pausaFlut').onclick = e => { e.stopPropagation(); alternar(); };
 
 /* ---------- controle Bluetooth / teclado ---------- */
 document.addEventListener('keydown', e => {
   if ($('telaPrompter').hidden) return;
   const k = e.key;
   $('tecla').textContent = 'Último botão recebido: ' + (k === ' ' ? 'Espaço' : k) + (e.code && e.code !== k ? ` (${e.code})` : '');
+  avisoBotao = (k === ' ' ? 'Espaço' : k); clearTimeout(avisoT); avisoT = setTimeout(() => { avisoBotao = ''; posicionar(); }, 2500); posicionar();
   const mapa = LS.get('mapa', {});
   const acao = mapa[k] || ({' ': 'play', 'Enter': 'play', 'MediaPlayPause': 'play', 'k': 'play',
     'ArrowUp': 'mais', '+': 'mais', 'ArrowDown': 'menos', '-': 'menos',
