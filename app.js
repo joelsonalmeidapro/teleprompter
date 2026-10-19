@@ -82,6 +82,7 @@ function abrirLista() {
 /* ---------- ajustes ---------- */
 const AJ = Object.assign({vel: 140, fonte: 46, fonteH: 64, ppl: 4, margem: 8, espaco: 13, guiaPos: 30, espelho: false, centro: true, numeros: true, contar: true, voz: false, sens: 24}, LS.get('aj', {}));
 if (AJ.vel < 40) AJ.vel = 140;
+AJ.voz = false; // seguir voz desligado por enquanto
 const salvarAj = () => LS.set('aj', AJ);
 const deitado = () => innerWidth > innerHeight;
 const fk = () => deitado() ? 'fonteH' : 'fonte';
