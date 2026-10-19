@@ -168,7 +168,7 @@ function remontar() {
 function ajustarFonte() {}
 
 /* ---------- rolagem ---------- */
-let avisoBotao = '', avisoT = 0, y = 0, rodando = false, tAnt = 0, velAtual = 0, falando = false, ultimaFala = 0, wake = null;
+let segurando = 0, avisoBotao = '', avisoT = 0, y = 0, rodando = false, tAnt = 0, velAtual = 0, falando = false, ultimaFala = 0, wake = null;
 const pxPorSeg = () => roteiroAtual && roteiroAtual.palavras ? (maxY() / roteiroAtual.palavras) * AJ.vel / 60 : 0;
 const maxY = () => Math.max(0, $('rolo').scrollHeight - innerHeight * (AJ.guiaPos / 100) - 40);
 function posicionar() {
@@ -183,6 +183,7 @@ function quadro(t) {
   if (AJ.voz && micOk) lerMic(t);
   let alvo = rodando ? pxPorSeg() : 0;
   if (rodando && AJ.voz && micOk && !falando) alvo = 0;
+  if (segurando) { const lh = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fonte')) * (AJ.espaco / 10); y = Math.max(0, Math.min(maxY(), y + segurando * lh * 2.5 * dt)); posicionar(); }
   velAtual += (alvo - velAtual) * Math.min(1, dt * 6);
   if (Math.abs(velAtual) > 0.05) {
     y = Math.min(maxY(), y + velAtual * dt); posicionar();
@@ -264,6 +265,8 @@ document.addEventListener('keydown', e => {
   if (!acao && !ignorar.includes(k) && !e.ctrlKey && !e.metaKey && !e.altKey) acao = 'play';
   if (!acao) return;
   e.preventDefault();
+  // botão segurado: o controle repete o comando; play não repete e a alavanca vira rolagem suave
+  if (e.repeat) { if (acao === 'volta' || acao === 'avanca') segurando = acao === 'avanca' ? 1 : -1; return; }
   if (acao === 'play') alternar(); else if (acao === 'mais') setVel(AJ.vel + 10); else if (acao === 'menos') setVel(AJ.vel - 10);
   else if (acao === 'volta') pularFrase(-1); else if (acao === 'avanca') pularFrase(1); else if (acao === 'inicio') $('inicio').click();
 });
@@ -301,6 +304,7 @@ function lerMic(t) {
 
 /* ---------- partida ---------- */
 addEventListener('resize', () => { ligaFonte(); if (!$('telaPrompter').hidden) remontar(); });
+document.addEventListener('keyup', () => { if (segurando) { segurando = 0; if (roteiroAtual) LS.set('pos_' + roteiroAtual.id, y); } });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && rodando) pedirWake(); if (document.visibilityState === 'hidden' && rodando) parar(); });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 aplicarVisual(); requestAnimationFrame(quadro);
