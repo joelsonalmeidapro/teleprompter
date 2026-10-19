@@ -34,7 +34,7 @@ button,input,select{font:inherit}
 .lista li.feito button{opacity:.55}
 .lista .sub{color:var(--dim);font-size:12px;letter-spacing:.1em;text-transform:uppercase;margin:14px 2px 2px;list-style:none}
 /* prompter */
-#palco{position:absolute;inset:0;overflow:hidden}
+#palco{position:absolute;inset:0;overflow:hidden;touch-action:none}
 #rolo{position:absolute;left:0;right:0;top:0;padding:0 var(--margem);will-change:transform}
 #rolo.centro{text-align:center}
 #rolo .ln{display:block;width:max-content;max-width:none}

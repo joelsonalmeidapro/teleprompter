@@ -221,7 +221,27 @@ $('voltarLista').onclick = () => { parar(true); desligarMic(); abrirLista(); };
 $('play').onclick = alternar;
 $('inicio').onclick = () => { parar(true); y = 0; LS.set('pos_' + roteiroAtual.id, 0); posicionar(); $('play').textContent = '▶ Começar'; };
 // tocar na tela: com o texto limpo abre o menu; com o menu aberto, começa
-$('palco').addEventListener('click', () => document.body.classList.contains('limpo') ? abrirMenu() : tocar());
+/* toque, arrastar e roda: o controle Bluetooth costuma agir como mouse/dedo
+   - toque de dedo: abre o menu (ou começa, se o menu já está aberto)
+   - "clique" do controle (mouse): só pausa/continua, sem menu
+   - arrastar (dedo ou alavanca) e roda do mouse: rolam o texto pra cima/baixo */
+let pIni = null;
+const palco = $('palco');
+palco.addEventListener('pointerdown', e => { pIni = {y: e.clientY, ult: e.clientY, tipo: e.pointerType, arrastou: false}; });
+palco.addEventListener('pointermove', e => {
+  if (!pIni) return;
+  const dy = e.clientY - pIni.ult;
+  if (Math.abs(e.clientY - pIni.y) > 8) pIni.arrastou = true;
+  if (pIni.arrastou) { y = Math.max(0, Math.min(maxY(), y - dy)); pIni.ult = e.clientY; posicionar(); }
+});
+palco.addEventListener('pointerup', e => {
+  const p = pIni; pIni = null;
+  if (!p || p.arrastou) { if (roteiroAtual) LS.set('pos_' + roteiroAtual.id, y); return; }
+  if (p.tipo === 'mouse' || p.tipo === 'pen') return alternar();
+  document.body.classList.contains('limpo') ? abrirMenu() : tocar();
+});
+palco.addEventListener('pointercancel', () => { pIni = null; });
+palco.addEventListener('wheel', e => { e.preventDefault(); y = Math.max(0, Math.min(maxY(), y + e.deltaY)); posicionar(); }, {passive: false});
 $('pausaFlut').onclick = e => { e.stopPropagation(); alternar(); };
 
 /* ---------- controle Bluetooth / teclado ---------- */
@@ -232,9 +252,9 @@ document.addEventListener('keydown', e => {
   avisoBotao = (k === ' ' ? 'Espaço' : k); clearTimeout(avisoT); avisoT = setTimeout(() => { avisoBotao = ''; posicionar(); }, 2500); posicionar();
   const mapa = LS.get('mapa', {});
   const acao = mapa[k] || ({' ': 'play', 'Enter': 'play', 'MediaPlayPause': 'play', 'k': 'play',
-    'ArrowUp': 'mais', '+': 'mais', 'ArrowDown': 'menos', '-': 'menos',
-    'ArrowLeft': 'volta', 'PageUp': 'volta', 'MediaTrackPrevious': 'volta',
-    'ArrowRight': 'avanca', 'PageDown': 'avanca', 'MediaTrackNext': 'avanca', 'Home': 'inicio'})[k];
+    'ArrowRight': 'mais', '+': 'mais', 'ArrowLeft': 'menos', '-': 'menos',
+    'ArrowUp': 'volta', 'PageUp': 'volta', 'MediaTrackPrevious': 'volta', 'AudioVolumeUp': 'volta',
+    'ArrowDown': 'avanca', 'PageDown': 'avanca', 'MediaTrackNext': 'avanca', 'AudioVolumeDown': 'avanca', 'Home': 'inicio'})[k];
   if (!acao) return;
   e.preventDefault();
   if (acao === 'play') alternar(); else if (acao === 'mais') setVel(AJ.vel + 10); else if (acao === 'menos') setVel(AJ.vel - 10);
