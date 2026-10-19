@@ -67,3 +67,6 @@ button,input,select{font:inherit}
 .medidor i{position:absolute;left:0;top:0;bottom:0;width:0;background:#3ddc84}
 .medidor em{position:absolute;top:0;bottom:0;width:2px;background:var(--amarelo)}
 @media (orientation:landscape) and (max-height:500px){#painel{max-height:92vh}}
+
+#pausaFlut{display:none;position:absolute;right:max(14px,env(safe-area-inset-right));bottom:calc(16px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(20,22,29,.55);color:#fff;font-size:18px;z-index:4}
+.rodando #pausaFlut{display:block}

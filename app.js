@@ -80,7 +80,7 @@ function abrirLista() {
 }
 
 /* ---------- ajustes ---------- */
-const AJ = Object.assign({vel: 140, fonte: 46, fonteH: 64, ppl: 4, margem: 8, espaco: 13, guiaPos: 30, espelho: false, centro: true, numeros: true, contar: true, voz: false, sens: 12}, LS.get('aj', {}));
+const AJ = Object.assign({vel: 140, fonte: 46, fonteH: 64, ppl: 4, margem: 8, espaco: 13, guiaPos: 30, espelho: false, centro: true, numeros: true, contar: true, voz: false, sens: 24}, LS.get('aj', {}));
 if (AJ.vel < 40) AJ.vel = 140;
 const salvarAj = () => LS.set('aj', AJ);
 const deitado = () => innerWidth > innerHeight;
@@ -167,7 +167,7 @@ function posicionar() {
   const m = maxY(), pct = m ? y / m : 0;
   $('barraFill').style.width = (pct * 100).toFixed(1) + '%';
   const pxs = pxPorSeg(), rest = pxs ? (m - y) / pxs : 0;
-  $('hudTxt').textContent = `${rodando ? '' : 'pausado · '}${AJ.vel} ppm · falta ${Math.floor(rest / 60)}:${String(Math.floor(rest % 60)).padStart(2, '0')}`;
+  $('hudTxt').textContent = `${rodando ? (AJ.voz && micOk ? (falando ? 'ouvindo · ' : 'esperando você falar · ') : '') : 'pausado · '}${AJ.vel} ppm · falta ${Math.floor(rest / 60)}:${String(Math.floor(rest % 60)).padStart(2, '0')}`;
 }
 function quadro(t) {
   const dt = tAnt ? Math.min(0.1, (t - tAnt) / 1000) : 0; tAnt = t;
@@ -185,6 +185,7 @@ async function pedirWake() { try { if ('wakeLock' in navigator) wake = await nav
 let contando = false;
 function tocar() {
   if (contando) return;
+  if (ctx && ctx.state !== 'running') ctx.resume();
   const vai = () => { rodando = true; document.body.classList.add('rodando'); $('play').textContent = '❚❚ Pausar'; pedirWake(); posicionar(); };
   if (!AJ.contar || y > 5) return vai();
   contando = true; let n = 3; const c = $('contagem'); c.hidden = false; c.textContent = n;
@@ -213,6 +214,7 @@ $('voltarLista').onclick = () => { parar(); desligarMic(); abrirLista(); };
 $('play').onclick = alternar;
 $('inicio').onclick = () => { parar(); y = 0; LS.set('pos_' + roteiroAtual.id, 0); posicionar(); $('play').textContent = '▶ Começar'; };
 $('palco').addEventListener('click', alternar);
+$('pausaFlut').onclick = e => { e.stopPropagation(); parar(); };
 
 /* ---------- controle Bluetooth / teclado ---------- */
 document.addEventListener('keydown', e => {
@@ -235,8 +237,10 @@ let micOk = false, ctx = null, analisador = null, fluxo = null, buf = null;
 async function ligarMic() {
   if (micOk) return;
   try {
-    fluxo = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: false, noiseSuppression: true, autoGainControl: false}});
-    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    ctx.resume && ctx.resume();
+    fluxo = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: false, noiseSuppression: false, autoGainControl: true}});
+    if (ctx.state !== 'running') await ctx.resume();
     const src = ctx.createMediaStreamSource(fluxo);
     analisador = ctx.createAnalyser(); analisador.fftSize = 1024; buf = new Float32Array(analisador.fftSize);
     src.connect(analisador); micOk = true; $('micPonto').hidden = false;
@@ -246,8 +250,10 @@ function desligarMic() { micOk = false; $('micPonto').hidden = true; try { fluxo
 function lerMic(t) {
   analisador.getFloatTimeDomainData(buf);
   let s = 0; for (let i = 0; i < buf.length; i++) s += buf[i] * buf[i];
-  const rms = Math.sqrt(s / buf.length), nivel = Math.min(1, rms * 12), limiar = (41 - AJ.sens) / 40 * 0.35;
+  const rms = Math.sqrt(s / buf.length), nivel = Math.min(1, Math.sqrt(rms) * 2.2), limiar = (41 - AJ.sens) / 40 * 0.6;
+  const antes = falando;
   if (nivel > limiar) { falando = true; ultimaFala = t; } else if (t - ultimaFala > 700) falando = false;
+  if (antes !== falando) posicionar();
   $('nivel').style.width = (nivel * 100) + '%'; $('limiar').style.left = (limiar * 100) + '%';
   $('micPonto').classList.toggle('on', falando);
 }
