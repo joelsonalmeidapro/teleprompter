@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Teleprompter Joelson</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Teleprompter">
+<meta name="theme-color" content="#000000">
+<meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="app.css?v=5">
+</head>
+<body>
+
+<!-- ENTRADA -->
+<section id="telaSenha" class="tela">
+  <div class="cartao">
+    <div class="marca">TELEPROMPTER<span>JOELSON</span></div>
+    <form id="formSenha" autocomplete="off">
+      <label for="senha">Senha</label>
+      <input id="senha" type="password" inputmode="text" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <button class="prim" type="submit">Entrar</button>
+      <p id="erroSenha" class="erro" hidden>Senha errada. Tenta de novo.</p>
+    </form>
+  </div>
+</section>
+
+<!-- LISTA -->
+<section id="telaLista" class="tela" hidden>
+  <header class="topo">
+    <div class="marca pequena">TELEPROMPTER<span>JOELSON</span></div>
+    <button id="atualizar" class="fant" type="button">Atualizar</button>
+  </header>
+  <nav id="pastas" class="pastas" aria-label="Pastas"></nav>
+  <ul id="lista" class="lista"></ul>
+  <p id="info" class="info"></p>
+</section>
+
+<!-- PROMPTER -->
+<section id="telaPrompter" class="tela" hidden>
+  <div id="palco"><div id="rolo"></div></div>
+  <div id="guia" aria-hidden="true"></div>
+  <div id="contagem" hidden></div>
+  <div id="hud"><span id="micPonto" hidden></span><span id="hudTxt"></span></div>
+  <div id="barra"><i id="barraFill"></i></div>
+
+  <div id="painel">
+    <div class="linha">
+      <button id="voltarLista" class="fant" type="button">‹ Roteiros</button>
+      <strong id="tituloAtual"></strong>
+    </div>
+    <div class="grade">
+      <label class="ctl">Velocidade <input id="vel" type="range" min="60" max="260" step="5"><b id="velv"></b></label>
+      <label class="ctl">Letra <input id="fonte" type="range" min="24" max="120" step="2"><b id="fontev"></b></label>
+      <label class="ctl">Palavras/linha <input id="ppl" type="range" min="2" max="10" step="1"><b id="pplv"></b></label>
+      <label class="ctl">Margem <input id="margem" type="range" min="0" max="30" step="1"><b id="margemv"></b></label>
+      <label class="ctl">Espaço <input id="espaco" type="range" min="10" max="30" step="1"><b id="espacov"></b></label>
+      <label class="ctl">Linha de leitura <input id="guiaPos" type="range" min="15" max="60" step="1"><b id="guiaPosv"></b></label>
+    </div>
+    <div class="linha botoes">
+      <button id="espelho" class="tog" type="button" aria-pressed="false">Espelhar</button>
+      <button id="alinhar" class="tog" type="button" aria-pressed="true">Centralizar</button>
+      <button id="numeros" class="tog" type="button" aria-pressed="true">Destacar números</button>
+      <button id="contar" class="tog" type="button" aria-pressed="true">Contagem 3s</button>
+      <button id="vozBt" class="tog" type="button" aria-pressed="false">🎙 Seguir voz</button>
+    </div>
+    <div id="vozPainel" class="linha" hidden>
+      <label class="ctl larga">Sensibilidade do microfone <input id="sens" type="range" min="1" max="40" step="1"><b id="sensv"></b></label>
+      <span class="medidor"><i id="nivel"></i><em id="limiar"></em></span>
+    </div>
+    <div class="linha">
+      <button id="inicio" class="fant" type="button">⟲ Início</button>
+      <button id="play" class="prim" type="button">▶ Começar</button>
+    </div>
+    <p id="tecla" class="info">Controle: aperte um botão e veja aqui o que chega.</p>
+  </div>
+</section>
+
+<script src="app.js?v=5"></script>
+</body>
+</html>
