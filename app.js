@@ -107,15 +107,25 @@ tog('espelho', 'espelho', posicionar); tog('alinhar', 'centro'); tog('numeros', 
 tog('vozBt', 'voz', () => { if (AJ.voz) ligarMic(); else desligarMic(); });
 
 /* ---------- montagem do texto ---------- */
+// quebra por número de palavras E pela largura da tela: a letra fica sempre do mesmo tamanho
+const regua = document.createElement('canvas').getContext('2d');
+let larguraMax = 0;
+function mede(palavras) {
+  return regua.measureText(palavras.join(' ').replace(/\*\*/g, '')).width;
+}
 function quebrar(frase, n) {
   const ws = frase.split(/\s+/).filter(Boolean), out = [];
   let cur = [];
   for (const w of ws) {
+    if (cur.length && larguraMax && mede([...cur, w]) > larguraMax) { out.push(cur); cur = []; }
     cur.push(w);
-    const pont = /[,;:!?.…)]["”]?$/.test(w);
+    const pont = /[,;:!?.…)]["”*]*$/.test(w);
     if (cur.length >= n || (pont && cur.length >= Math.max(2, Math.ceil(n / 2)))) { out.push(cur); cur = []; }
   }
-  if (cur.length) { if (cur.length === 1 && out.length && out[out.length - 1].length < n + 2) out[out.length - 1].push(...cur); else out.push(cur); }
+  if (cur.length) {
+    const ult = out[out.length - 1];
+    if (cur.length === 1 && ult && ult.length < n + 2 && (!larguraMax || mede([...ult, ...cur]) <= larguraMax)) ult.push(...cur); else out.push(cur);
+  }
   return out;
 }
 // amarelo = números e nomes próprios; verde = ênfase marcada no roteiro com **assim**
@@ -137,6 +147,10 @@ function realce(palavras, est) {
 }
 function remontar() {
   if (!roteiroAtual) return;
+  const fpx = AJ[fk()];
+  document.documentElement.style.setProperty('--fonte', fpx + 'px');
+  regua.font = `800 ${fpx}px -apple-system, "SF Pro Display", system-ui, "Segoe UI", Roboto, sans-serif`;
+  larguraMax = ($('rolo').clientWidth || innerWidth) - 2 * (AJ.margem / 100) * innerWidth - 4;
   const prop = maxY() ? y / maxY() : 0;
   let html = '<div style="height:' + AJ.guiaPos + 'vh"></div>';
   for (const p of roteiroAtual.partes) {
@@ -151,18 +165,7 @@ function remontar() {
 }
 
 /* letra se ajusta para nenhuma linha quebrar em duas */
-function ajustarFonte() {
-  // letra única para o texto todo (cabe em 90% das linhas); só as poucas linhas restantes diminuem sozinhas
-  const rolo = $('rolo'), r = document.documentElement.style;
-  r.setProperty('--fonte', AJ[fk()] + 'px');
-  const largura = rolo.clientWidth - 2 * (AJ.margem / 100) * innerWidth, lns = [...rolo.querySelectorAll('.ln')];
-  lns.forEach(el => el.style.fontSize = '');
-  if (!lns.length || largura <= 0) return;
-  const razoes = lns.map(el => largura / el.scrollWidth).sort((a, b) => a - b);
-  const base = Math.max(16, Math.floor(AJ[fk()] * Math.min(1, razoes[Math.floor(razoes.length * 0.1)])));
-  r.setProperty('--fonte', base + 'px');
-  for (const el of lns) { const w = el.scrollWidth; if (w > largura) el.style.fontSize = Math.max(14, Math.floor(base * largura / w)) + 'px'; }
-}
+function ajustarFonte() {}
 
 /* ---------- rolagem ---------- */
 let avisoBotao = '', avisoT = 0, y = 0, rodando = false, tAnt = 0, velAtual = 0, falando = false, ultimaFala = 0, wake = null;
