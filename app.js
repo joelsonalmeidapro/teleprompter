@@ -172,7 +172,7 @@ function posicionar() {
   const m = maxY(), pct = m ? y / m : 0;
   $('barraFill').style.width = (pct * 100).toFixed(1) + '%';
   const pxs = pxPorSeg(), rest = pxs ? (m - y) / pxs : 0;
-  $('hudTxt').textContent = `${rodando ? (AJ.voz && micOk ? (falando ? 'ouvindo · ' : 'esperando você falar · ') + 'mic ' + Math.round(nivelAtual * 100) + ' · ' : '') : 'pausado · '}${AJ.vel} ppm · falta ${Math.floor(rest / 60)}:${String(Math.floor(rest % 60)).padStart(2, '0')}`;
+  $('hudTxt').textContent = `${rodando ? (AJ.voz && micOk ? (falando ? 'ouvindo · ' : 'esperando você falar · ') + 'mic ' + Math.round(nivelAtual * 100) + '/' + Math.round(limiarAtual * 100) + ' · ' : '') : 'pausado · '}${AJ.vel} ppm · falta ${Math.floor(rest / 60)}:${String(Math.floor(rest % 60)).padStart(2, '0')}`;
 }
 function quadro(t) {
   const dt = tAnt ? Math.min(0.1, (t - tAnt) / 1000) : 0; tAnt = t;
@@ -238,7 +238,7 @@ document.addEventListener('keydown', e => {
 });
 
 /* ---------- seguir a voz ---------- */
-let nivelAtual = 0, micOk = false, ctx = null, analisador = null, fluxo = null, buf = null;
+let nivelAtual = 0, limiarAtual = 0, pisoRuido = null, micOk = false, ctx = null, analisador = null, fluxo = null, buf = null;
 async function ligarMic() {
   if (micOk) return;
   try {
@@ -251,11 +251,16 @@ async function ligarMic() {
     src.connect(analisador); const mudo = ctx.createGain(); mudo.gain.value = 0; analisador.connect(mudo); mudo.connect(ctx.destination); micOk = true; $('micPonto').hidden = false;
   } catch (e) { AJ.voz = false; salvarAj(); aplicarVisual(); $('tecla').textContent = 'O microfone não foi liberado. Em Ajustes do iPhone, permita o microfone para o Safari.'; }
 }
-function desligarMic() { micOk = false; $('micPonto').hidden = true; try { fluxo && fluxo.getTracks().forEach(t => t.stop()); ctx && ctx.close(); } catch (e) {} fluxo = ctx = null; }
+function desligarMic() { micOk = false; pisoRuido = null; $('micPonto').hidden = true; try { fluxo && fluxo.getTracks().forEach(t => t.stop()); ctx && ctx.close(); } catch (e) {} fluxo = ctx = null; }
 function lerMic(t) {
   analisador.getFloatTimeDomainData(buf);
   let s = 0; for (let i = 0; i < buf.length; i++) s += buf[i] * buf[i];
-  const rms = Math.sqrt(s / buf.length), nivel = Math.min(1, Math.sqrt(rms) * 2.2), limiar = (41 - AJ.sens) / 40 * 0.6;
+  const rms = Math.sqrt(s / buf.length), nivel = Math.min(1, Math.sqrt(rms) * 2.2);
+  // piso de ruído se calibra sozinho: desce rápido no silêncio, sobe devagar
+  if (pisoRuido === null) pisoRuido = nivel;
+  pisoRuido = nivel < pisoRuido ? pisoRuido * 0.7 + nivel * 0.3 : pisoRuido + (nivel - pisoRuido) * 0.003;
+  const limiar = Math.min(0.95, pisoRuido + (41 - AJ.sens) / 40 * 0.22);
+  limiarAtual = limiar;
   const antes = falando;
   if (nivel > limiar) { falando = true; ultimaFala = t; } else if (t - ultimaFala > 700) falando = false;
   if (antes !== falando) posicionar();
