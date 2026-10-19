@@ -80,12 +80,14 @@ function abrirLista() {
 }
 
 /* ---------- ajustes ---------- */
-const AJ = Object.assign({vel: 140, fonte: 46, ppl: 4, margem: 8, espaco: 13, guiaPos: 30, espelho: false, centro: true, numeros: true, contar: true, voz: false, sens: 12}, LS.get('aj', {}));
+const AJ = Object.assign({vel: 140, fonte: 46, fonteH: 64, ppl: 4, margem: 8, espaco: 13, guiaPos: 30, espelho: false, centro: true, numeros: true, contar: true, voz: false, sens: 12}, LS.get('aj', {}));
 if (AJ.vel < 40) AJ.vel = 140;
 const salvarAj = () => LS.set('aj', AJ);
+const deitado = () => innerWidth > innerHeight;
+const fk = () => deitado() ? 'fonteH' : 'fonte';
 function aplicarVisual() {
   const r = document.documentElement.style;
-  r.setProperty('--fonte', AJ.fonte + 'px'); r.setProperty('--margem', AJ.margem + 'vw');
+  r.setProperty('--fonte', AJ[fk()] + 'px'); r.setProperty('--margem', AJ.margem + 'vw');
   r.setProperty('--espaco', (AJ.espaco / 10).toFixed(2)); r.setProperty('--guia', AJ.guiaPos + '%');
   $('rolo').classList.toggle('centro', AJ.centro);
   for (const [id, k] of [['espelho', 'espelho'], ['alinhar', 'centro'], ['numeros', 'numeros'], ['contar', 'contar'], ['vozBt', 'voz']]) $(id).setAttribute('aria-pressed', AJ[k]);
@@ -95,7 +97,9 @@ function liga(id, k, fmt = v => v, remonta = false) {
   const el = $(id); el.value = AJ[k]; $(id + 'v').textContent = fmt(AJ[k]);
   el.oninput = () => { AJ[k] = +el.value; $(id + 'v').textContent = fmt(AJ[k]); salvarAj(); aplicarVisual(); if (remonta) remontar(); else posicionar(); };
 }
-liga('vel', 'vel', v => v + ' ppm'); liga('fonte', 'fonte', v => v, true); liga('ppl', 'ppl', v => v, true); liga('margem', 'margem', v => v, true);
+liga('vel', 'vel', v => v + ' ppm');
+function ligaFonte() { const el = $('fonte'); el.value = AJ[fk()]; $('fontev').textContent = AJ[fk()]; el.oninput = () => { AJ[fk()] = +el.value; $('fontev').textContent = el.value; salvarAj(); remontar(); }; }
+ligaFonte(); liga('ppl', 'ppl', v => v, true); liga('margem', 'margem', v => v, true);
 liga('espaco', 'espaco', v => (v / 10).toFixed(1), true); liga('guiaPos', 'guiaPos', v => v + '%'); liga('sens', 'sens');
 function tog(id, k, depois) { $(id).onclick = () => { AJ[k] = !AJ[k]; salvarAj(); aplicarVisual(); if (depois) depois(); }; }
 tog('espelho', 'espelho', posicionar); tog('alinhar', 'centro'); tog('numeros', 'numeros', remontar); tog('contar', 'contar');
@@ -144,12 +148,12 @@ function remontar() {
 function ajustarFonte() {
   // letra única para o texto todo (cabe em 90% das linhas); só as poucas linhas restantes diminuem sozinhas
   const rolo = $('rolo'), r = document.documentElement.style;
-  r.setProperty('--fonte', AJ.fonte + 'px');
+  r.setProperty('--fonte', AJ[fk()] + 'px');
   const largura = rolo.clientWidth - 2 * (AJ.margem / 100) * innerWidth, lns = [...rolo.querySelectorAll('.ln')];
   lns.forEach(el => el.style.fontSize = '');
   if (!lns.length || largura <= 0) return;
   const razoes = lns.map(el => largura / el.scrollWidth).sort((a, b) => a - b);
-  const base = Math.max(16, Math.floor(AJ.fonte * Math.min(1, razoes[Math.floor(razoes.length * 0.1)])));
+  const base = Math.max(16, Math.floor(AJ[fk()] * Math.min(1, razoes[Math.floor(razoes.length * 0.1)])));
   r.setProperty('--fonte', base + 'px');
   for (const el of lns) { const w = el.scrollWidth; if (w > largura) el.style.fontSize = Math.max(14, Math.floor(base * largura / w)) + 'px'; }
 }
@@ -249,7 +253,7 @@ function lerMic(t) {
 }
 
 /* ---------- partida ---------- */
-addEventListener('resize', () => { if (!$('telaPrompter').hidden) remontar(); });
+addEventListener('resize', () => { ligaFonte(); if (!$('telaPrompter').hidden) remontar(); });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && rodando) pedirWake(); if (document.visibilityState === 'hidden' && rodando) parar(); });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 aplicarVisual(); requestAnimationFrame(quadro);
