@@ -117,15 +117,20 @@ function quebrar(frase, n) {
   if (cur.length) { if (cur.length === 1 && out.length && out[out.length - 1].length < n + 2) out[out.length - 1].push(...cur); else out.push(cur); }
   return out;
 }
-function realce(palavras) {
-  let negrito = false;
+// amarelo = números e nomes próprios; verde = ênfase marcada no roteiro com **assim**
+const NOME = /^["“'(]?[A-ZÁÉÍÓÚÂÊÔÃÕÇ][a-záéíóúâêôãõçà]+/;
+function realce(palavras, est) {
   return palavras.map(w => {
     let abre = false, fecha = false;
     if (w.startsWith('**')) { w = w.slice(2); abre = true; }
-    if (w.endsWith('**')) { w = w.slice(0, -2); fecha = true; }
-    if (abre) negrito = true;
-    const html = negrito ? `<mark>${esc(w)}</mark>` : (AJ.numeros && /\d/.test(w)) ? `<b>${esc(w)}</b>` : esc(w);
-    if (fecha) negrito = false;
+    if (/\*\*[.,;:!?…"”)]*$/.test(w)) { w = w.replace(/\*\*(?=[.,;:!?…"”)]*$)/, ''); fecha = true; }
+    if (abre) est.enfase = true;
+    const inicio = est.inicio; est.inicio = /[.!?:…]["”)]?$/.test(w);
+    let html;
+    if (est.enfase) html = `<em>${esc(w)}</em>`;
+    else if (AJ.numeros && (/\d/.test(w) || (!inicio && NOME.test(w)) || /^[A-Z]{2,}\d*[,.;:!?]?$/.test(w))) html = `<b>${esc(w)}</b>`;
+    else html = esc(w);
+    if (fecha) est.enfase = false;
     return html;
   }).join(' ');
 }
@@ -136,7 +141,7 @@ function remontar() {
   for (const p of roteiroAtual.partes) {
     if (p.t === 'rot') html += `<div class="rot">${esc(p.x)}</div>`;
     else if (p.t === 'bloco') html += '<div class="blocofim"></div>';
-    else { const ls = quebrar(p.x, AJ.ppl); ls.forEach((l, i) => { html += `<p class="ln${i === ls.length - 1 ? ' fimfrase' : ''}">${realce(l)}</p>`; }); }
+    else { const ls = quebrar(p.x, AJ.ppl), est = {inicio: true, enfase: false}; ls.forEach((l, i) => { html += `<p class="ln${i === ls.length - 1 ? ' fimfrase' : ''}">${realce(l, est)}</p>`; }); }
   }
   html += '<div style="height:85vh"></div>';
   $('rolo').innerHTML = html;
@@ -167,7 +172,7 @@ function posicionar() {
   const m = maxY(), pct = m ? y / m : 0;
   $('barraFill').style.width = (pct * 100).toFixed(1) + '%';
   const pxs = pxPorSeg(), rest = pxs ? (m - y) / pxs : 0;
-  $('hudTxt').textContent = `${rodando ? (AJ.voz && micOk ? (falando ? 'ouvindo · ' : 'esperando você falar · ') : '') : 'pausado · '}${AJ.vel} ppm · falta ${Math.floor(rest / 60)}:${String(Math.floor(rest % 60)).padStart(2, '0')}`;
+  $('hudTxt').textContent = `${rodando ? (AJ.voz && micOk ? (falando ? 'ouvindo · ' : 'esperando você falar · ') + 'mic ' + Math.round(nivelAtual * 100) + ' · ' : '') : 'pausado · '}${AJ.vel} ppm · falta ${Math.floor(rest / 60)}:${String(Math.floor(rest % 60)).padStart(2, '0')}`;
 }
 function quadro(t) {
   const dt = tAnt ? Math.min(0.1, (t - tAnt) / 1000) : 0; tAnt = t;
@@ -233,7 +238,7 @@ document.addEventListener('keydown', e => {
 });
 
 /* ---------- seguir a voz ---------- */
-let micOk = false, ctx = null, analisador = null, fluxo = null, buf = null;
+let nivelAtual = 0, micOk = false, ctx = null, analisador = null, fluxo = null, buf = null;
 async function ligarMic() {
   if (micOk) return;
   try {
@@ -243,7 +248,7 @@ async function ligarMic() {
     if (ctx.state !== 'running') await ctx.resume();
     const src = ctx.createMediaStreamSource(fluxo);
     analisador = ctx.createAnalyser(); analisador.fftSize = 1024; buf = new Float32Array(analisador.fftSize);
-    src.connect(analisador); micOk = true; $('micPonto').hidden = false;
+    src.connect(analisador); const mudo = ctx.createGain(); mudo.gain.value = 0; analisador.connect(mudo); mudo.connect(ctx.destination); micOk = true; $('micPonto').hidden = false;
   } catch (e) { AJ.voz = false; salvarAj(); aplicarVisual(); $('tecla').textContent = 'O microfone não foi liberado. Em Ajustes do iPhone, permita o microfone para o Safari.'; }
 }
 function desligarMic() { micOk = false; $('micPonto').hidden = true; try { fluxo && fluxo.getTracks().forEach(t => t.stop()); ctx && ctx.close(); } catch (e) {} fluxo = ctx = null; }
@@ -254,7 +259,7 @@ function lerMic(t) {
   const antes = falando;
   if (nivel > limiar) { falando = true; ultimaFala = t; } else if (t - ultimaFala > 700) falando = false;
   if (antes !== falando) posicionar();
-  $('nivel').style.width = (nivel * 100) + '%'; $('limiar').style.left = (limiar * 100) + '%';
+  nivelAtual = nivel; $('nivel').style.width = (nivel * 100) + '%'; if (rodando && Math.random() < 0.1) posicionar(); $('limiar').style.left = (limiar * 100) + '%';
   $('micPonto').classList.toggle('on', falando);
 }
 

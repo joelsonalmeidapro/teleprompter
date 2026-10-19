@@ -41,6 +41,7 @@ button,input,select{font:inherit}
 #rolo.centro .ln{margin-left:auto;margin-right:auto}
 .ln{white-space:nowrap;font-size:var(--fonte);line-height:var(--espaco);font-weight:650;margin:0;letter-spacing:.005em}
 .ln b{color:var(--amarelo);font-weight:800}
+.ln em{font-style:normal;color:#4ADE80;font-weight:800;text-decoration:underline;text-decoration-thickness:.06em;text-underline-offset:.14em}
 .ln mark{background:linear-gradient(transparent 12%,rgba(180,92,255,.55) 12%,rgba(180,92,255,.55) 88%,transparent 88%);color:#fff;font-weight:800;padding:0 .08em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
 .ln.fimfrase{margin-bottom:calc(var(--fonte)*.35)}
 .rot{font-size:calc(var(--fonte)*.36);letter-spacing:.16em;text-transform:uppercase;color:var(--roxo);font-weight:800;margin:calc(var(--fonte)*1.2) 0 calc(var(--fonte)*.5)}
