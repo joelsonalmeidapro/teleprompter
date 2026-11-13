@@ -71,3 +71,5 @@ button,input,select{font:inherit}
 
 #pausaFlut{display:none;position:absolute;right:max(14px,env(safe-area-inset-right));bottom:calc(16px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(20,22,29,.55);color:#fff;font-size:18px;z-index:4}
 .limpo #pausaFlut{display:block}
+
+.ln small.pron{font-size:.5em;font-weight:500;color:#9A9A9A;font-style:italic;vertical-align:middle}

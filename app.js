@@ -135,6 +135,8 @@ function realce(palavras, est) {
     let abre = false, fecha = false;
     if (w.startsWith('**')) { w = w.slice(2); abre = true; }
     if (/\*\*[.,;:!?…"”)]*$/.test(w)) { w = w.replace(/\*\*(?=[.,;:!?…"”)]*$)/, ''); fecha = true; }
+    if (w.startsWith('((')) est.pron = true;
+    if (est.pron) { const fim = /\)\)[.,;:!?…"”]*$/.test(w); const h = `<small class="pron">${esc(w.replace(/^\(\(/, '').replace(/\)\)(?=[.,;:!?…"”]*$)/, ''))}</small>`; if (fim) est.pron = false; return h; }
     if (abre) est.enfase = true;
     const inicio = est.inicio; est.inicio = /[.!?:…]["”)]?$/.test(w);
     let html;
